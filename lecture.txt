@@ -1,0 +1,132 @@
+1. 서버 만들고 실행
+  - npm init
+  - npm install express
+  - server.js 만들고 express = require('express') 하고 app = express()
+  - app.listen(포트번호,할일)
+
+2. GET 요청(서버에서 데이터 가져올때)
+  -app.get("경로",하는일(요청, 응답){
+      할일
+  })
+
+
+
+
+
+ HTTP 요청 시스템 : 
+ - GET : 읽기 뭔가 읽고싶을때
+ - POST : 쓰기 뭔가 생성할때
+ - PUT : 수정 뭔가 수정할때
+ - DELETE : 삭제 뭔가 삭제할때
+
+ Post 하기 위해서는
+ 1. html form 태그에 action = '/경로' method = "POST"
+ 2. 각각 input에 name 설정 필요(구별하기 위함)
+ 3. app.post 쓰기 위해서 app.use(express.urlencoded({ extended: true })); 설정
+ 4. form 태그에 의해서 오는 데이터 정보는 request안에 있음
+ 5. request.body.name 하면 접근 가능
+
+
+ API란?
+ REST하게 API짜는게 좋다.
+ API : Application Programming Interface
+ 웹개발 환경에서 API는: 웹서버와 클라이언트 간의 소통 방법
+ 어떻게 해야 서버랑 통신을 할 수 있을까
+                       
+ 이 API를 어떻게 짜야 REST 하게 짤수 있을까
+
+** REST 원칙 6개
+1. Uniform Interface(이게 제일제일 중요해)
+
+인터페이스는 일관성이 있어야한다는 소리가… 뭔소리냐면 
+– 하나의 URL로는 하나의 데이터를 가져와야함 (하나를 가져오기 위한 두개의 URL을 만들지 말자)
+– 간결하고 예측가능하게 짜세요 (URL 하나를 알면 둘을 알게)
+– URL 이름짓기 관습을 잘 따라주세요
+
+좋은 이름짓기 관습
+-> url만보고도 예측이 가능해야해
+-> URL을 명사로 작성
+-> 하위문서 나타낼때는 /
+-> 파일확장자 쓰지말것
+-> 띄어쓰기는 대시(-)이용
+-> 자료하나당 하나의 URL
+ 
+
+(참고)
+다른 곳에서 URL 대신 URI 이런 용어를 많이 쓰기도 하는데 
+URI는 자료를 넘버링하고 분류하고 지칭하는 방법이라 보시면 됩니다. URL과 비슷하지만 조금 더 큰 의미입니다. 
+도서관에서 책 분류할 때 URI에 의해서 분류하기도 합니다. 
+
+ 
+2. Client-server 역할 구분하기
+서버는 응답만, 클라이언트(브라우저)는 요청만
+고객들은 그냥 URL 하나만 알면 서버에 있는 자료를 갖다쓸 수 있습니다. 
+고객에게 서버역할을 맡기거나
+고객에게 DB에 있는 자료를 직접 꺼내라고 하든지 그런 식으로 코드를 짜시면 안됩니다. 
+
+3. Stateless
+요청들은 각각 독립적으로 처리되어야합니다. 
+요청1이 성공해야 요청2를 보내주고 그런 식으로 요청간의 의존성이 존재하는 코드를 짜시면 안됩니다. 
+다르게 말하면
+요청하나 만으로 자료를 가져오기 충분하도록 
+요청에 필요한 모든 정보들을 실어 보내는게 좋다는 뜻이겠죠? 
+ 
+4. Cacheable(크롬이 알아서 해줌)
+요청을 통해 보내는 자료들은 캐싱이 가능해야합니다.
+그리고 캐싱가능하다고 표시하거나 캐싱 기간을 설정해주어야 한다고 합니다.
+
+* 캐싱이뭐냐면
+네이버를 방문하면 크롬 브라우저는 자동으로 자주 사용하는 이미지 파일, CSS 파일 등을 하드에 저장해놓습니다. 
+별로 바뀔일 없는 네이버 로고나 아이콘 같은거요.
+하드에 저장해놓고 네이버 방문할 때 네이버서버에 네이버 로고주세요~라고 요청하지 않고 하드에서 불러옵니다.
+이 행위를 캐싱이라고 합니다. 
+
+5. Layered System(안중요해)
+요청처리하는곳, DB에 저장하는곳 이런 여러가지 단계를 거쳐서 요청을 처리해도 됩니다.
+멋있게 말하면 여러개의 레이어를 거쳐서 요청을 처리하게 만들어도 된다고 합니다.
+우리도 그렇게 할 것입니다.
+
+6. Code on Demand(안중요해)
+서버는 고객에게 실제 실행가능한 코드를 전송해줄 수도 있습니다. 
+
+
+---- 웹사이트 기능 만들기 기본----
+1. 서버로 데이터 전송할 수 있는 UI 만들기
+2. 서버에서 원하는데로 정보를 처리
+
+----DataBase 기본--------
+1. Sql : 관계형 데이터베이스 3차원 데이터 넣기 어려워
+2. NoSql : Objext 자료형으로 입출력 가능
+   Dynamo, Oracle NoSQL, MongoDB, Redis, Cassandra
+
+--------MongoDB 셋팅------------
+1. MongoDB atlas 가입
+2. free 부분 가입
+3. 클러스터 만들때 물리적으로 가장 가까운곳 선택
+4. 다 만들어지면 Database Access에서 아이디 비번 설정(유저)
+  ** MongoDB DataBase Access
+    ID : admin
+    PW : admin1234
+5. Network Access에서 접속할수있는 IP설정
+   - 아무곳에서나 접속가능하도록 함 0.0.0.0/0
+
+6. Cluster에서 Connect해야함
+   connect -> connect your application
+   언어와 버전 선택
+   아래의 코드가 가장 중요하다
+
+   mongodb+srv://admin:<password>@cluster0.gbnj2.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
+
+7. npm install mongodb 하고 MongoClient.connect 쓸것
+
+8. collection 설정
+      - DataBase는 폴더 / collection은 각 파일들
+      - add my own data
+      - 변수(db) 선언하고 db = client.db("todoapp"); -> 변수 db는 이제 todoapp에 접근한것임
+      - 그다음 db.collection으로 collection에 데이터 넣기 할수 있음
+
+9. collection에 접근하여 데이터 저장
+   - 변수.collection('collection이름').insertOne({데이터},(error, result)=>{
+      error 났을때 뭐 보여줄래
+      저장 성공했을때 뭐보여줄래
+   })
