@@ -1,11 +1,11 @@
 const express = require("express");
 const app = express();
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.set("view engine", "ejs");
 const MongoClient = require("mongodb").MongoClient;
 
 let db;
-let id = 1;
+let id = 7;
 
 MongoClient.connect(
   "mongodb+srv://admin:admin1234@cluster0.gbnj2.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
@@ -30,14 +30,27 @@ MongoClient.connect(
 
 app.post("/add", (req, res) => {
   res.redirect("/write");
-  db.collection("post").insertOne(
-    {_id: id, 제목: req.body.title, 날짜: req.body.date},
-    (error, result) => {
-      id = id + 1;
-      console.log("저장완료");
-      console.log("next id is" + id);
-    }
-  );
+
+  db.collection("counter").findOne({ name: "게시물갯수" }, (error, result) => {
+    console.log(result.totalPost);
+    let idCounter = result.totalPost;
+    db.collection("post").insertOne(
+      { _id: idCounter, 제목: req.body.title, 날짜: req.body.date },
+      (error, result) => {
+        console.log("저장완료");
+        db.collection("counter").updateOne(
+          { name: "게시물갯수" },
+          { $inc: { totalPost: 1 } },
+          (error, result) => {
+            if (error) {
+              return console.log(error);
+            }
+            console.log("result");
+          }
+        );
+      }
+    );
+  });
 });
 
 app.get("/list", (req, res) => {
@@ -45,7 +58,10 @@ app.get("/list", (req, res) => {
     .find()
     .toArray((error, result) => {
       console.log(result);
-      res.render("list.ejs", {posts: result});
+      res.render("list.ejs", { posts: result });
+      // 디비에 저장된 post라는 collection 안의 어떤(모든, id가 뭐인, 제목이 뭐인)
+      //데이터를 꺼내주세요
+      // result는 여기 scope 내에서만 사용가능
     });
 });
 

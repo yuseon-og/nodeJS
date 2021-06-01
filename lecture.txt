@@ -1,16 +1,13 @@
-1. 서버 만들고 실행
+-------------------- 서버 만들고 실행 --------------------
   - npm init
   - npm install express
   - server.js 만들고 express = require('express') 하고 app = express()
   - app.listen(포트번호,할일)
 
-2. GET 요청(서버에서 데이터 가져올때)
+--------------------GET 요청(서버에서 데이터 가져올때)--------------------
   -app.get("경로",하는일(요청, 응답){
       할일
   })
-
-
-
 
 
  HTTP 요청 시스템 : 
@@ -27,7 +24,7 @@
  5. request.body.name 하면 접근 가능
 
 
- API란?
+ --------------------API란?--------------------
  REST하게 API짜는게 좋다.
  API : Application Programming Interface
  웹개발 환경에서 API는: 웹서버와 클라이언트 간의 소통 방법
@@ -90,16 +87,16 @@ URI는 자료를 넘버링하고 분류하고 지칭하는 방법이라 보시�
 서버는 고객에게 실제 실행가능한 코드를 전송해줄 수도 있습니다. 
 
 
----- 웹사이트 기능 만들기 기본----
+------------------------ 웹사이트 기능 만들기 기본------------------------
 1. 서버로 데이터 전송할 수 있는 UI 만들기
 2. 서버에서 원하는데로 정보를 처리
 
-----DataBase 기본--------
+------------------------DataBase 기본----------------------------
 1. Sql : 관계형 데이터베이스 3차원 데이터 넣기 어려워
 2. NoSql : Objext 자료형으로 입출력 가능
    Dynamo, Oracle NoSQL, MongoDB, Redis, Cassandra
 
---------MongoDB 셋팅------------
+----------------------------MongoDB 관련--------------------------------
 1. MongoDB atlas 가입
 2. free 부분 가입
 3. 클러스터 만들때 물리적으로 가장 가까운곳 선택
@@ -130,3 +127,133 @@ URI는 자료를 넘버링하고 분류하고 지칭하는 방법이라 보시�
       error 났을때 뭐 보여줄래
       저장 성공했을때 뭐보여줄래
    })
+
+10. collection에 접근하여 데이터 가져오기 find()
+   - 변수.collection('collection이름').find()
+    그리고 모든 데이터를 다 받아와서 배열에 저장해야해
+    - 변수.collection('collection이름').find().toArray((error, result)=>{
+       해야할 동작
+    })
+    - 이렇게 받아온 result를 ejs안에 꽂아 넣을수 있어야 한다.
+
+**** get이든 post든 반드시 응답.send( ) 이부분은 반드시 존재해야 한다.
+
+11. _id 값은 항상 있어야 한다 하드코딩은 안된다. 당연히
+   - 게시물에 id를 넣는다면 : 총개시물 개수 +1을 해주면 됨
+   - 총 게시물 개수??? -> auto increment라는 기능 but mongo DB에는 없는 기능 ㅠㅠ
+   - 글 번호는 유니크하게 관리해야함
+
+   -> 하는법 글번호 id를 따로 관리하기 위해서 collection을 추가로 만듦
+      counter 라는 collection 만들고 거기에 totalPost : 0, name : "개시물 갯수" 
+      여기에 게시물을 하나 발행할때마다 totalPost 부분을 1씩 증가 시킬것임
+
+   -> post 할때 id 부여 할수있도록 하는법
+     1) db.collection에서 counter 먼저 열어서 findOne으로 찾는다. findOne({찾는거},콜백함수(error, result))
+     2) result.totalPost로 총 게시물 수를 받아서 변수(WOW)에 넣는다.
+     3) db.collection('post')를 열어서 데이터 저장을 시작한다
+     4) 이때 _id에 변수(WOW)를 넣어주고, 나머지 데이터를 넣어준다
+     5) db.collection('post') 닫고나서 db.collection('counter')안에 totalPost도 1을 증가시켜야 한다.
+
+   -> totalPost 증가시키는법 db.collection('count').updateOne({어떤데이터를},{이렇게 수정해줘}, 콜백함수없어도 되긴함)
+     1) 수정할때 쓸수있는 함수 updateOne(한개) updateMany(마니)
+     2) 기본사용 : 첫번째 자료를 찾아야해 유일한놈(name)으로
+                   두번째 $set:{totalPost:1} 이거는 걍 1로 바꿔버리는거
+                          $inc:{totalPost:1} 이거는 1을 증가시키는거
+                   세번째 : 콜백함수로 error, result 설정해줘 !! 없어도 동작은 잘됨!!
+
+      ** update 류의 함수를 쓸때는 수정값 부분에 { 오퍼레이터 : {키 : 벨류}}하면 됨
+      몽고DB에서 가장 어려운 거래.... operator 는 $set, $inc, $rename 등등 찾아서 사용
+
+   
+
+12. 게시글 발행기능 총정리
+   0) db선언하고 db와 connect해서 db.collection 쓸수있게 해놓기
+   
+   1) write.html에서 (ejs일수도 있겠지?) form 태그에 action = "/경로" method="POST" 설정
+   
+   2) form 태그 안에 input에 name 각각 설정
+      -> 일케하면 submit 했을때 action의 경로로 POST 방식으로 input의 name이름으로 데이터가 날라감
+   
+   3) 데이터 날라오니까 server.js에서는 받아서 처리해줘야해
+   
+   4) POST로 날려주니까 app.post로 받아주고, 경로는 action에서 설정한 '/경로'를 정해주면 form에서 보낸 데이터 오겠지
+   
+   5) 콜백함수에는 (request, response)로 파라메터 설정해주고 함수를 크게 열어서 db가지고 지지고 볶고 다해야함
+       request(요청)에는 날라온 데이터가 들어있어
+       response(응답)은 뭐 어떻게 반응 해주까 하는것(팝업을띄워, 리다이렉트를해 등등)
+   
+   6) 그 다음 counter collection을 먼저 받아오자
+      - findOne으로 counter에 name이 "특정한것"인놈을 찾아와
+      - 콜백함수는 error와 result로 result.totalPost하면 counter 값 접근가능
+      - 이 카운터값을 별도로 선언한 변수(idCounter)에다 담아놔
+      ** 아직 5) 콜백함수 내부임
+   
+   7) 그리고 이제 post collection에 데이터를 저장하자 
+       중요중요!!!!!!! 아직 열려있는 counter collection안에서 해야한다 
+         why? totalPost의 값을 받아온 변수 idCounter가 지역변수니까 살아있는 scope 안에서 데이터 저장해야헤
+      - post collection 열어주고 insertOne으로 한개를 넣어줍시다.
+      - 넣어주는건 {_id:idCount변수, title:request.body.title, date : request.body.date} 이렇게
+          아직 5)콜백함수 내부여야만 request로 아까 form에서 POST 방식으로 넘어온 데이터 쓸수있어
+      - 콜백함수로 넣고나서 할 동작 error와 result로 정해주기
+      ** 아직 5) 콜백함수 내부임 + 6)의 콜백함수 내부임
+
+    8) post collection열여 있는 상태로 아까 counter collection의 totalPost를 변경(update)해주자
+      - 아직 5)와 6) 콜백함수 내부인데 7) 콜백함수 내부에서 counter collection 열어서 update 하자
+      - .updateOne 함수를 사용
+      - .updateOne({특정한거 찾아},{이렇게 바꿔},콜백함수(error, result))
+         첫번째 파라메터 : {특정한거 찾아} 아까 6)과 동일
+         두번째 파라메터 : {이렇게 바꿔} 요놈이 어려움
+           바꾸는 방법 {$오퍼레이터:{어떤키값을 : 일케바꿔요}}
+           $오퍼레이터는 다양함, 예시 : $set 아예 값을바꿔요 $inc 바꾸라는것만큼 증가시켜요
+         세번째 파라메터 : 항상있는 콜백함수 에러처리
+
+
+
+
+
+-------------------ejs 셋팅 관련----------------------
+    ejs는 node.js에서 view 부분을 담당하는 것으로 html을 그려주는 역할
+    html 사이에서 js 문법으로 변화를 줄때 사용
+
+    왜 사용하는가?? : 그냥 html을 사용하면 정적인 페이지가 된다.
+    그래서 EJS나 Pug 같은 템플릿 엔진을 사용 즉 서버의 데이터를html에 
+    쉽게 박아넣을수 있도록 하는 랜더링 엔진
+
+셋팅하는법
+1. npm install ejs
+
+2. server.js에서 app.set('view engine','ejs') -> view 엔진으로 ejs를 사용하겠다 선언
+
+3. 보여주는 파일을 XXX.ejs로 만들기(html이랑 같은 파일이지만 서버데이터를 넣을 수 있다.)
+
+
+
+    <%   %> if나 반복문 같은거 적용할때 사용
+    <%= 서버에서 보낸 데이터 변수명 %>
+    <%-  %>
+
+
+4. ejs 파일을 보여주는 법
+  - app.get('/list',(요청,응답)=>{
+     응답.render('list.ejs') -> 이렇게 쓰면 list.ejs 파일을 렌더링해서 보여줌
+
+     ** find().toArray()로 result를 받아왔고, 이것을 ejs 파일에 넘겨줘서 랜더링 시키려면
+     응답.render('랜더링할 ejs 파일',{이름 : result})로 넘겨준다
+      즉 "랜더링할 ejs파일에다가 디비에서 받아온 result를 "이름"이라는 이름으로 넘겨주이소
+
+  })
+
+5. 이때 ejs 파일은 위치가 매우 중요하다 무조건 views 폴더 내에 위치해야한다.
+
+- JS 반복문 연습
+
+for(let i=0; i<이름.length; i++){
+   반복할 코드
+}
+이 반복문을 ejs 안에서 쓰려면 <%    %>이 안에 써야한다
+
+-------------------- 삭제 DELETE 기능 관련----------------------
+!!! form 태그의 method는 GET과 POST 요청 밖에 안된다.... DELETE / PUT 불가능
+ 해결방법
+ 1. 라이브러리 method-override 이용(node에서 쓸수 있는) -> form에서 DELETE 가능해짐
+ 2. Ajax이용(언젠간 쓸꺼니까 이거 꼭 다뤄야하니 이거쓰자)

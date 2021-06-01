@@ -43,17 +43,19 @@
       </div>
     </nav>
 
-    <div>
+    <ul class="list-group">
       <!-- <h1><%= posts %></h1>
       <h2><%= posts %></h2> -->
 
       <%for(let i=0; i<posts.length; i++ ) { %>
-          <!-- <h1><%=posts[i]._id%></h1> -->
-          <h1><%=posts[i].제목%></h1>
-          <span><%=posts[i].날짜%></span>
+          <li class="list-group-item">
+          <h4>할일 제목 : <%=posts[i].제목%></h4>
+          <p>마감 일자 : <%=posts[i].날짜%></p>
+          <button>삭제</button>
+        </li>
           <% } %>
       
-    </div>
+      </ul>
 
     <!-- Optional JavaScript; choose one of the two! -->
 
