@@ -53,6 +53,15 @@ app.post("/add", (req, res) => {
   });
 });
 
+app.delete("/delete", (req, res) => {
+  console.log("delete request");
+  console.log(req.body);
+  req.body._id = parseInt(req.body._id);
+  db.collection("post").deleteOne(req.body, (error, reuslt) => {
+    console.log("삭제완료");
+  });
+});
+
 app.get("/list", (req, res) => {
   db.collection("post")
     .find()

@@ -10,11 +10,19 @@
   })
 
 
- HTTP 요청 시스템 : 
+ HTTP 요청 시스템 : ** 경로와 요청방식이 둘다 있어야 서버에서 알아먹고 동작함**
  - GET : 읽기 뭔가 읽고싶을때
+   -> '/경로' 들어갔을때 app.get동작으로 데이터 가져오기
+       result에 데이터가 담기니 그것을 html/ejs에 넘겨주기
+       
  - POST : 쓰기 뭔가 생성할때
+   -> html/ejs에서 form 태그에서 action에 '/경로'주고 method에서 post했을때
+      server쪽에서는 app.post('/경로') POST 동작이 실행됨
+
  - PUT : 수정 뭔가 수정할때
  - DELETE : 삭제 뭔가 삭제할때
+   -> ajax나 axios로 프론트엔드(html)에서 delete 요청
+   server에서 app.delete('/경로')로 Delete 동작이 실행됨
 
  Post 하기 위해서는
  1. html form 태그에 action = '/경로' method = "POST"
@@ -22,6 +30,29 @@
  3. app.post 쓰기 위해서 app.use(express.urlencoded({ extended: true })); 설정
  4. form 태그에 의해서 오는 데이터 정보는 request안에 있음
  5. request.body.name 하면 접근 가능
+
+
+** GET,POST,DELETE,PUT 동작할때 경로와 요청방식 둘다 있어야 하는데
+  app.get(경로,(요청,응답)=>{
+     동작 동작 동작
+  }) 
+  이렇게 돌때 response 즉 응답은 여러가지 방법이 있다.
+   - 응답.send('<p>some html</p>') 
+      -> 간단한 문자나 html 전송
+
+   - 응답.status(404).send('Sorry, we cannot find that!')
+      -> 응답코드 보내고 문자 보내기
+
+   - 응답.sendFile('/uploads/logo.png')
+      -> static(정적인) 파일을 보낼수 있다. 
+      
+   - 응답.render('list.ejs', { ejs에 보낼 데이터 })
+      -> render는 ejs등 템플릿이 적용된 페이지 랜더링 해줌
+   
+   - 응답.json(제이슨데이터)
+      -> 제이슨 데이터 담아보낼수 있음
+
+
 
 
  --------------------API란?--------------------
@@ -257,3 +288,74 @@ for(let i=0; i<이름.length; i++){
  해결방법
  1. 라이브러리 method-override 이용(node에서 쓸수 있는) -> form에서 DELETE 가능해짐
  2. Ajax이용(언젠간 쓸꺼니까 이거 꼭 다뤄야하니 이거쓰자)
+
+ Ajax란?
+   프론트 엔드에서 자바스크립트로 서버에 요청할수 있는 문법(서버와 통신할 수 있는)
+   장점 : 새로고침 없이 해당부분만 변경할수있게 서버랑 통신가능
+   ** 그냥 자바스크립트로도 사용가능하지만
+      정신건강을 위해서 jquery를 써라
+   ** 나중에는 axios를 쓰면 될듯
+
+   - Ajax 사용해서 DELETE 구현하기
+      1) html에서 자바스크립트 작성하는법
+         - <script>요기다가 작성하면 됨</script>
+      
+      2)jquery 설치
+           <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            crossorigin="anonymous"></script>
+        부트스트랩에서 이미 jquery 넣어놨다 그러나 slim버전이고 이상한거 붙었다 
+         <script src="https://code.jquery.com/jquery-3.5.1.min.js">  </script>
+         이렇게 변경해서 cnd 방식으로 설치(구글 검색
+         )
+
+      3) jquery 설치 후 어디에서 작업?
+         jquery 설치된 script 아래에 작업해야함 반드시~!
+
+      
+      4) Ajax 기본문법
+          $.ajax({
+                   method : 'DELETE',  -> 서버에 새로고침 없이 delete 할꺼야~
+                   url : '요청할 경로',
+                   data : '요청과 함께 보낼 데이터'   -> 예를들면 게시물번호
+                 }).done((결과)=>{
+                    요청이 성공하면 여기꺼를 실행해주세요
+                    결과가 있어야 하는 요청이면 위에 결과에 있을꺼에요
+                 })
+
+      5) server에서 동작은
+         app.delete('/경로',(req, res)=>{
+            **ajax에서 data를 넘겨보냈으면 req.body에서 확인가능
+
+         })
+
+      5-2)  DELETE 메소드
+         db.collection('post').deleteOne({어떤 항목을 찾아서 삭제할래?}, () => {
+         요청이 성공하면 해야할일     })
+         **** deleteOne(삭제할거, 성공하면 할 행동) -> 여기에서 삭제할거 자료형 맞춰줘야해~!!!
+         req.body._id = parseInt(req.body._id)이렇게 int형으로 바꾸어 줄것
+
+      6) 여기까지 하면 새로고침 할때마다 해당 아이디의 글이 삭제된다.
+         -> 삭제 버튼을 누를때만 삭제 시켜야해
+         -> jquery 문법사용
+         $('.delete").click(()=>{
+            $.ajax .......
+         }) 
+           -> 이 문법은 jquery로 "delete"라는 class를 가진 요소를 click하면
+           어떠한 동작을 해라 라는 뜻
+
+      7) 어떤 삭제버튼을 눌리면 그 삭제버튼의 글번호(_id)만 삭제되게
+         1) ejs로 데이터가 넘어와 있으니 당연히 _id도 있다.
+         2) 글번호를 노출시키려면 posts[i]._id 하면 됨
+         3) 글번호 노출 안시키려면 태그 속성에다가 data-id="<%=posts[i]._id%>" 하면되
+         4) ajax의 data 부분에 {_id : 여기에다가 지금 내가 클릭한 버튼의 id 넣으면되}
+         5) $(".delete").click((e)=>{
+            let 글번호 = e.target.dataset.id 이러면 태그 속성에 숨겨진 id 가져옴
+            ** 궅이 data-id 안해도되 걍 id로 지정하고
+            e.target.id 이렇게 잡아도 가능해
+         -> 여기까지 하면 server는 동작해서 글을 삭제하는데
+            ejs는 새로고침 하기전까지는 그대로 있는디
+            그러면 ajax 성공시 
+               -> 페이지 강제 새로고침 또는
+               -> 삭제버튼 누른 li요소를 안보이게/제거해 주세요
+         
