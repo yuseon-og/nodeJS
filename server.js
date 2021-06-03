@@ -74,6 +74,16 @@ app.get("/list", (req, res) => {
     });
 });
 
+//POSTMAN TEST
+
+app.get("/test", (req, res) => {
+  db.collection("post")
+    .find()
+    .toArray((error, result) => {
+      res.json(result);
+    });
+});
+
 app.get("/", (request, response) => {
   response.sendFile(__dirname + "/index.html");
 });
