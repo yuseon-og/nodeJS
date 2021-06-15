@@ -19,29 +19,31 @@
     <title>Node JS</title>
   </head>
   <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <a class="navbar-brand" href="/">NodeJS App</a>
-      <button
-        class="navbar-toggler"
-        type="button"
-        data-toggle="collapse"
-        data-target="#navbarNavAltMarkup"
-        aria-controls="navbarNavAltMarkup"
-        aria-expanded="false"
-        aria-label="Toggle navigation"
-      >
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-        <div class="navbar-nav">
-          <a class="nav-link active" href="/"
-            >Home <span class="sr-only">(current)</span></a
-          >
-          <a class="nav-link" href="/write">Write</a>
-          <a class="nav-link" href="/list">list</a>
+    <%- include('nav.html') %>
+    <div class="container mt-4">
+      <div><h2>기록해도 안할 거 알지만</h2></div>
+      <form action="/add" method="POST">
+        <div class="form-group">
+          <label> 할일 </label>
+          <input
+            name="title"
+            type="text"
+            class="form-control"
+            placeholder="할일"
+          />
         </div>
-      </div>
-    </nav>
+        <div class="form-group">
+          <label>Due Date</label>
+          <input
+            name="date"
+            type="text"
+            class="form-control"
+            placeholder="세부내용"
+          />
+        </div>
+        <button type="submit" class="btn btn-success">Submit</button>
+      </form>
+    </div>
 
     <!-- Optional JavaScript; choose one of the two! -->
 

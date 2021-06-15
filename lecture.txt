@@ -1,8 +1,37 @@
+--------------------리액트 쓰면 안해도 될것들-------------
+1. ejs 파일은 다 싸그리 무시
+2. 서버는 데이터 주고받는 api역할
+3. 라우팅까지 리액트에서 할 수 있음
+
 -------------------- 서버 만들고 실행 --------------------
   - npm init
   - npm install express
   - server.js 만들고 express = require('express') 하고 app = express()
   - app.listen(포트번호,할일)
+
+------------------------- CSS 파일 넣는법 -----------------------
+1. public 폴더 만들어서(view 폴더와 같은 깊이) css 파일 다 집어넣기
+2. html에 삽입시키기(기본이지)
+3. server.js에 /public 위치에 있는 폴더를 쓰겠다고 선언해주어야 함
+   -> app.use('/public',express.static('public'))
+
+
+----------------------- nav 조립식으로 개발 ----------------------
+
+1. nav.html 파일 만들기
+2. nav html코드를 복붙
+3. 필요한 자리에 insert 해주기 *ejs*이용
+   <%- include('nav.html')%> w
+    ** 중요~!!!! <%-   "-" 이놈이다 "="이놈이 아니라
+   ** 쌩 html에서는 jquery써야함 ejs에서만 가능
+   ** 리액트 사용하면 리액트에서 하면 되....
+
+-------------------- index등 모든 html에 ejs쓰려면 ---------------
+1. view 폴더로 이동시키고 확장자 ejs로 변경
+2. 서버에서 response.sendFile은 쌩 html을 보낼때!
+   그러니까 ejs 파일을 보내려면!
+   response.render('ejs파일 이름',{이 이름으로 : 이데이터 보내})
+이렇게 설정하면 끝
 
 --------------------GET 요청(서버에서 데이터 가져올때)--------------------
   -app.get("경로",하는일(요청, 응답){
@@ -388,9 +417,22 @@ for(let i=0; i<이름.length; i++){
            - :id 를 쓰면 어떤 값이든 올 수 있고, 이 값은 request.params에 파라메타로 전달된다.
            - 쓰기 위해서는 req.params.id 하면 됨
          -> 어떤 :id 번호가 들어오면 id 번호에 맞는 게시물을 DB에서 찾기
-           - db.collection("db이름").findOne({뭘 찾을건지}, (에러, 결과)=>{
+           - db.collection("db이름").findOne({뭘 찾을건지(detail/뒤에 있는 숫자)}, (에러, 결과)=>{
               에러 났을때
               결과 났을때 : app.get 함수에 response를 줘야한다.
-                    => response.render("ejs파일",{넘겨줄 파라메터})
+                    => response.render("ejs파일",{ 이런 파라메터이름으로 넘겨줌 : 이런 데이터를 })
 
            })
+           ** 이때 findOne({뭘 찾을건지}. <-- 이부분 디테일하게 보자
+              {db에 있는 기준id : 넘어져오는 req.params.id}
+              but 여기서 req.params.id는 string 형식이니 int형으로 parseInt 해주어야 함
+
+         ** 없는 게시물은 어떻게 처리할까?
+            findOne 함수는 실험해보니 매칭되는게 없어도 error는 null이다...
+            어떤 경우에 error가 나는지는 미확인
+            그냥 error 나는경우 status 500 주고
+            result가 null인경우 404 주고
+            result가 null이 아닌경우 ejs 출력해주면 됨/데이터 넘겨주면 됨
+
+         ** 목록list에서 제목 클릭하면 상세페이지로~
+            list.ejs의 할일 제목을 a 태그로 감싸고 href로 경로 /detail/<%=여기에 넘어온 거._id%> 해주면 됨
