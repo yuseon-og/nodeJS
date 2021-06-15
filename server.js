@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended: true}));
 app.set("view engine", "ejs");
 const MongoClient = require("mongodb").MongoClient;
 
@@ -31,16 +31,16 @@ MongoClient.connect(
 app.post("/add", (req, res) => {
   res.redirect("/write");
 
-  db.collection("counter").findOne({ name: "게시물갯수" }, (error, result) => {
+  db.collection("counter").findOne({name: "게시물갯수"}, (error, result) => {
     console.log(result.totalPost);
     let idCounter = result.totalPost;
     db.collection("post").insertOne(
-      { _id: idCounter, 제목: req.body.title, 날짜: req.body.date },
+      {_id: idCounter, 제목: req.body.title, 날짜: req.body.date},
       (error, result) => {
         console.log("저장완료");
         db.collection("counter").updateOne(
-          { name: "게시물갯수" },
-          { $inc: { totalPost: 1 } },
+          {name: "게시물갯수"},
+          {$inc: {totalPost: 1}},
           (error, result) => {
             if (error) {
               return console.log(error);
@@ -59,7 +59,7 @@ app.delete("/delete", (req, res) => {
   req.body._id = parseInt(req.body._id);
   db.collection("post").deleteOne(req.body, (error, reuslt) => {
     console.log("삭제완료");
-    res.status(200).send({ message: "성공했습니다." });
+    res.status(200).send({message: "성공했습니다."});
   });
 });
 
@@ -68,7 +68,7 @@ app.get("/list", (req, res) => {
     .find()
     .toArray((error, result) => {
       console.log(result);
-      res.render("list.ejs", { posts: result });
+      res.render("list.ejs", {posts: result});
       // 디비에 저장된 post라는 collection 안의 어떤(모든, id가 뭐인, 제목이 뭐인)
       //데이터를 꺼내주세요
       // result는 여기 scope 내에서만 사용가능
@@ -91,6 +91,12 @@ app.get("/", (request, response) => {
 
 app.get("/write", (request, response) => {
   response.sendFile(__dirname + "/write.html");
+});
+
+app.get("/detail/:id", (req, res) => {
+  db.collection("post").findOne({_id: req.params.id}, (error, result) => {
+    res.render("detail.ejs", {posts: result});
+  });
 });
 
 // 어떤 사람이 / add 경로로 POST 요청을 하면...

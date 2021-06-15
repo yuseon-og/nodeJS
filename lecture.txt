@@ -382,3 +382,15 @@ for(let i=0; i<이름.length; i++){
 
 **** arrow function과 그냥 function에서 $this의 의미가 다르다~!!!!!
          
+      10) Detail 페이지 여러개 만들기
+         -> app.get("/detail/여기 여러번호) 오도록 만들기
+           - /detail/:id   ":id" 이놈으로 무작위 번호 받도록
+           - :id 를 쓰면 어떤 값이든 올 수 있고, 이 값은 request.params에 파라메타로 전달된다.
+           - 쓰기 위해서는 req.params.id 하면 됨
+         -> 어떤 :id 번호가 들어오면 id 번호에 맞는 게시물을 DB에서 찾기
+           - db.collection("db이름").findOne({뭘 찾을건지}, (에러, 결과)=>{
+              에러 났을때
+              결과 났을때 : app.get 함수에 response를 줘야한다.
+                    => response.render("ejs파일",{넘겨줄 파라메터})
+
+           })
