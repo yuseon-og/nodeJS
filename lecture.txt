@@ -436,3 +436,380 @@ for(let i=0; i<이름.length; i++){
 
          ** 목록list에서 제목 클릭하면 상세페이지로~
             list.ejs의 할일 제목을 a 태그로 감싸고 href로 경로 /detail/<%=여기에 넘어온 거._id%> 해주면 됨
+
+
+
+-------------------- 수정 PUT 기능 관련----------------------
+   1. 보이는것 먼저
+      1) 상세페이지에 수정버튼 눌리면 edit.ejs/:id로 이동시키기
+      2) edit.ejs/:id에서는 write.ejs 와 같은 폼인데 value가 들어가있어야 함
+         -> 여기는 상세페이지에서 :id로 DB에서 정보 받아오는 로직 똑같이 쓰임
+      3) 수정버튼을 눌리면 바뀐 내용으로 수정되도록 해야함
+         !!!!!!!!!!! HTML은 기본적으로 GET, POST 메소드 밖에 없다
+         !!!!!!!!!!! PUT을 쓰려면
+                  1. Axios / jquery등 쓰던가
+                  2. Method Override 설치해서 쓰던가 put/delete 둘다 사용가능
+         여기선 2번 방법으로 진행
+            1. npm install method-override
+            2. server.js에 넣어서 사용가능토록 만들기
+               const methodOverride = require('method-override')
+               app.use(methodOverride('_method'))
+            3. html의 form 태그에 
+               action="/edit?_method=PUT" method="POST" 로 사용
+
+   2. server를 수정
+      1) 수정페이지에서 수정버튼 누르면 갈곳은 /edit이고 method는 POST 인 상황
+      app.post("/edit",(req,res)=>{
+         여기에는 {어떤 데이터를 찾아서} {그 데이터 안에 요고 요고는 요렇게 바꿔주세요} {끝나고 나면 이거 실행시켜요}
+      }) 
+
+      2) 수정페이지에서 req.body에 값을 넘겨주는데 form 태그 안의 input에서 넘겨주는데 name 값이 id, 제목, 날짜 다 있어야 해
+
+      3) 수정페이지에서 display:none으로 하는 id값을 posts._id에서 가져온걸 input 태그 하나에 넣어줘서 넘겨주자
+
+      4) server에서 이제 updateOne으로 시작
+         ({수정할거 찾는 기준},{데이터 : req.body.수정할놈},콜백함수)
+            ** 두번째 파라메터 중요
+            {$set : {db에 이름:수정할놈}} 일케 해줘야하는데
+            $set -> 이놈은 업데이트 해주세요(없으면 추가해주시고요)라는 뜻
+      
+      5) 콜백함수는 error나면 에러 출력해주고 성공하면 성공했다 해주고
+
+      6) 아무런 반응이 없는것을 대비해서 redirect 해주자
+
+      7) 실행시켜봤는데 안된다??? req.body.id 이놈을 항상 조심하자
+         id값이 항상 posts._id로 넘어오는데 넘어오는놈은 string 형태이고
+         DB안에는 int형이니까 parseInt 항상 해주자
+            -> 요거 안해주면 페이지 움직임과 로그는 다뜨는데 DB수정이 안된다
+
+
+---------------여기까지가 CRUD-------------------------
+-------------------------------------------------------
+
+-----------------------회원인증방법---------------------
+
+      1. session-based
+      2. token-based : JSON Web Token
+      3. Open Authentication
+
+------------------Session -Based 방식(가장 간단한 방법) --------------
+
+1. 설치할 라이브러리
+   로그인 : passport
+   로그인 검증 : passport-local 
+               local은 직접만들어 쓰겟다. 다른거 막 twiter나 다른라이브러리 쓸수 있음
+   세션생성 : express-session  ** 실제 서비스할때는 이거말고 MongoDB에 세션데이터를 저장해주는 라이브러리 이용해라
+
+2. 라이브러리 require 준비
+   const passport = require('passport');
+   const LocalStrategy = require('passport-local').Strategy;
+   const session = require('express-session');
+
+3. 미들웨어 준비
+   app.use(session({secret : '비밀코드', resave : true, saveUninitialized: false}));
+   app.use(passport.initialize());
+   app.use(passport.session()); 
+
+   웹서버는 요청 - 응답해주는 기계인데 이 요청과 응답 중간에
+   뭔가 실행되는 코드가 미들웨어다.
+
+   "비밀코드"는 세션 만들때 비밀번호, 아무거나 상관X
+--- 여기까지 셋팅 끝
+
+5. 흐름 : 
+         -> 로그인 페이지 제작
+         -> 로그인 요청시 아이디/비번 검증 미들웨어 실행시키기 -> app.post('/',여기 들어가는놈,(req,res)=>{})
+         -> 아이디 비번 검증하는 세부코드 작성
+            -> 입력한 아이디/비번이 DB와 맞는지 비교
+         -> 맞으면 세선 만들어 저장 ( 마이페이지 방문시 세션검사 등)
+
+      1) 로그인 페이지
+         input 2개에 form태그에는 /login 으로 POST 요청
+         input은 각각 name이 id / pw로 변경해주어야 함
+         pw는 type을 password 해주는게 보안상 좋지
+
+      2) server에 /login으로 들어오면 페이지 보여주기 get으로 login.ejs 렌더링
+
+      3) /login에 POST로 들어오면 아래 흐름 실행
+         -> 로그인을 하면, 아이디랑 비번을 검사하세요(아래의 passport 들어가는 부분)
+         -> 통과가 되면 응답을 해줄꺼다
+
+         app.post("경로",passport여기 들어감, (res,req)=>{
+            성공하면 여기로
+         })
+         passport.authenticate('local',{
+            failureRedirect: "/fail",
+             //로그인 실패시 여기로 이동시켜주세요
+         })
+      
+      4) 아이디 비번 인증하는 세부코드는 별도로
+         
+         - 세부코드 해석1
+         passport.use(new LocalStrategy({
+            usernameField: 'id', (요기는 사용자가 제출한 아이디가 어디 적혔는지)
+            passwordField: 'pw', (요기는 사용자가 제출한 비번이 어디 적혔는지)
+            session: true, (요기는 세션을 만들건지)
+            passReqToCallback: false, (요기는 아이디/비번말고 다른 정보검사가 필요한지)
+         });
+
+         - 세부코드 해석 2
+         (userId, userPw, done) => {
+            console.los(userId, userPw);  // 사용자 입력한거 한번 보는거
+
+            db.collection("login").findOne({ id: userId }, (error, result) => { //DB의 login 콜렉션에서 userId와 DB의 id가 같은걸 찾아봐
+               if (error) { 
+                  return done(error); // 찾는데 이러나면 에러로 끝
+               } else if (!result) {
+                  return done(null, false, { message: "존재하지 않는 아이디요" }); // 찾는데 result가 없다면 아이디가 없는거지
+               } else if (userPw == result.pw) {
+                  return donw(null, result); // 찾았다! 그럼 이제 user가 입력한 pw와 찾은 result의 pw와 비교해봐 맞아? 로그인 확인
+               } else {
+                  return done(null, false, { message: "비번틀릿으요" });  // 비번이 안맞아 그럼 에러
+               }
+            });
+            }
+
+         ** 중요부분 : 파라메타가 id, pw, done 세개가 들어간다
+         done이 뭐냐? : 라이브러리 문법이다.
+                        3개의 파라메터 가진다(서버에러,성공시 사용자 DB데이터, 에러메세지)
+
+         done으로 모든것을 리턴하게 되어있다.
+            -성공하면 done(null,result)
+            -실패하면 done(null,false,메세지)
+            -에러나면 done(error)
+
+         ** 보안상 중요부분
+         userPw == result.pw 비교할때 바로 비교하면 보안상 최악
+         – 애초에 DB에 pw를 저장할 때 암호화해서 저장하는 것이 좋으며
+         – 사용자가 입력한 비번을 암호화해준 뒤에 이게 결과.pw와 같은지 비교하는게 조금 더 보안에 신경쓴 방법
+
+      5) 검사가 끝나면!! 세션을 하나 만들어서 저장해두어야 함
+         - 세션에 등록하는 법
+
+         passport.serializeUser((user, done) => {
+           done(null, user.id)    -> result의 id를 이용해서 세션을 저장시키는 코드
+            })
+         // 세션을 저장시키는 코드(로그인 성공시)
+         // user.id 라는 정보로 세션을 만들어 저장함
+         ** 아이디 비번 검증시 result 나오는거를 여기 파라메터 user로 보냄
+         // 세션 데이터를 만들고 세션의 id정보를 쿠키로 보냄
+
+
+
+         passport.deserializeUser((userId, done) => {
+            done(null, {})
+            })
+         // 나중에 마이페이지 접속시 쓸꺼임
+         // 이 세션 데이터를 가진 사람을 DB에서 찾아주세요 라는 뜻
+
+--------- 여기까지 로그인 기능 >> 추가로 로그인했는지 안했는지 세션으로 판단하기 ---------
+
+미들웨어 쓰는법~!!!!!! '경로', 미들웨어, 콜백함수 이렇게 미들...에 쓴다.
+
+app.get(요청, 미들웨어, 응답) 이런식이니까!!
+
+   1. 마이페이지 만들기
+      걍 만들고 라우팅해....
+   
+   2. 마이페이지 접속전에 "로그인"했는지 확인(하는 미들웨어 만들기)
+      function logInConfirm(req, res, next) {
+         if (req.user) {
+            next();
+         } else {
+            res.send("로그인부터 해라....");
+         }
+         }
+         req(요청),res(응답),next 3개 파라메터 필요
+         이 미들웨어 함수를 app.get의 미들에 사용
+         여기서 req.user?????
+         req.user는 누군가 꽂아준 상태이다 그놈은 deserializeUser
+         이 함수는 req.user가 있는지만 확인하는놈이다.
+         req.user는 로그인 후 세션이 있으면 항상 있어야 함
+   
+   !!!!    deserializeUser 라는 기능 때문에 항상 req에 user가 존재하는 상황
+   !!!! 아무곳에서나 req 출력해보면 Passpot와 session 내용이 있다. 그리고 user도 있다...
+
+
+
+   --------- deserializeUser ---------
+
+   로그인한 유저의 세션아이디를 바탕으로 개인정보를 DB에서 찾음
+
+   1. deserializeUser는 userId 정도만 가지고 있고 그걸 req에 뿌려준다.
+   2. DB에서 해당 유저의 정보를 가져와서 이용하고 싶다면
+      여기에서 가져와서 결과 반환해줘야 한다.
+   
+로그인 Flow를 잘 아는게 중요하다~!!!!
+
+1. 로그인 페이지 제작
+      -> form에서 보내주기
+
+2. 로그인 요청시 아이디/비번 검증 미들웨어 실행시키기 -> app.post('/',여기 들어가는놈,(req,res)=>{})
+      -> 여기에서 passport 사용해서 성공/실패 분기 설정
+
+3. 아이디 비번 검증하는 세부코드 작성
+      -> 외부에 별도로 만들기
+         입력한 아이디/비번이 DB와 맞는지 비교  passport.use(new LocalStrategy 사용
+
+      -> 맞으면 세선 만들어 저장 : serializeUser
+      
+      -> 나중에 쓰기위해 req 뿌려주기 : deserializeUser
+         
+
+-------------------.env 환경변수 ------------------
+1. DB접속이나 포트번호등 딴데가서 바뀌는거 전역변수처럼 관리하는거
+2. npm install dotenv
+3. require('dotenv').config(); 로 사용할수있게 server.js 등록
+4. .env 파일 만들고 여기에 변수명 = 값으로 저장
+5. 쓰고자하는 위치에서 불러오기
+   사용법 : process.env.변수이름
+
+
+**남은거!!
+
+1. 검색기능 만들기
+2. 회원기능 포함한 게시판
+3. API 라우터로 관리하기
+4. 이미지 업로드 / 이미지 서버 만들기
+5. 웹소켓으로 채팅만들기
+
+-----------------------GET / POST--------------------
+
+둘다 서버로 form이 가지고 있는 데이터 전달위해 사용~!
+
+1. GET 메소드
+   1) 한번의 데이터 요청시,전송 데이터의 양은 주소값+파라미터로  255자로 제한이 된다.
+   2) 저장된 data를 단순히 요청할때 사용한다.
+   3) URL에 그대로 query의 이름과 값이 같이 연결되어 표현된다.
+      ->Query String 형태로 url 뒤에 붙어서 서버로 날라간다
+
+2. POST 메소드
+   ** 입력한 정보를 숨겨서 보낼때!! 데이터 작성, 수정, 로그인등 post 사용
+
+
+사용할때 구분 기준   GET :  가져온다  POST : 수행한다
+
+
+----------------------검색기능 만들기-------------------
+
+1. 검색할수있는 input / button / form 태그 만들기
+
+2. input에 name 설정하고 여기에 들어오는 value를 보내주기(GET방식, POST 방식)
+
+3. GET 방식으로 보내주고 form에서 수행할 url 설정 /search
+
+4. server에서 /seacrh에 get 방식 들어왔을때 수행하게 함
+   1) html에서 보내오는 데이터를 어떻게 받는가? req.body.name이었는데...
+      ** GET 방식에서는 req.query로 받아야 한다
+      ** POST, DELETE, PUT은 모두 req.body로 가능하다. 매우중요!!!
+   2) find로 {제목 : req.query.name} 으로 찾아서 .toArray((error,result))로 보내주기
+   3) toArray 함수의 콜백함수 내부에서는 result를 뿌려줘야지 
+   4) searchlist.ejs 만들어서 posts라는 이름으로 result를 보내줘
+
+5. posts를 받은 searchlist.ejs는 받은것만 그려주기
+
+// 여기까지 기본 검색기능인데.문제가 검색어랑 일치하는것만 뺀다 find함수 한계
+// 해결해보자
+
+6. 정규식 사용 : /  여기에다 문자 담기 /  // 요고 사이에 문자 넣으면
+   
+   /abc/ 이렇게 적으면 문자열에 abc가 있냐 라고 물어보는것
+
+   정규식이란 : 문자를 검사하는 식
+
+   req.query.searchTerm 이런 변수를 넣지를 못한다... 심각하기 문제구나
+   할수있는법
+   let term = new RegExp(변수,"패턴지정") 이렇게 해결해보자
+   let term = new RegExp(req.query.searchTerm) // 일치하는 패턴 중 최초 등장하는 패턴 한 번만 찾음
+   let term = new RegExp(req.query.searchTerm,"g")  // 모든 패턴을 찾음
+   let term = new RegExp(req.query.searchTerm,"gi") // 대소문자 구분 없이 모든 패턴을 찾음
+
+   이렇게 정규식으로 변환하고
+   .find({ 제목: term }) 이렇게 사용하면 됨
+
+
+------------ 게시물이 매우 많을때 쓰는 indexing -----------------
+
+1. 컴퓨터는 기본적으로 처음부터 탐색해서 조건에 맞는것을 준다.
+
+2. UP/DOWN 으로 물어봐서 찾아내는게 Binary Seacrh
+   -> 70 찾을때 1) 50이상? Yes/no 이렇게 하는거
+
+3. Binary Seacrh 하려면 숫자순으로 정렬이 되어있어야 한다.
+   mongoDB는 _id 순으로 정렬해주기때문에 바로 Binary Seacrh 가능
+   but 제목, 날짜 이런 스트링은 정렬이 안되어있다.
+
+4. 제목등을 미리 정렬이 된 collection을 하나 더 만들어 두는것
+   -> indexing이다.
+   -> 기존 collection을 정렬해놓은 복사본이다.
+   -> mongoDB atlas에서 클릭몇번으로 생성가능하다.
+   collection -> indexes -> create index
+    여기에서 field에 정렬하고 싶은 항목을 적고 type을 설정해줘
+    type이 숫자일때는 1 또는 -1 오름/내림차순
+
+** 인덱싱은 그냥 정렬된 사본하나 더 만드는거다~
+
+------------------------index 만들어 둔걸로 빠르게 검색하려면 ---------------
+.find에다가 .find({ $text: { $search: req.query.searchTerm } })
+일케 해주면 되는데 $text는 TEXT 기준으로 만들어놓은 index이고
+$search는 찾는 명령어지
+
+!! 이렇게 해도 단어 일부만 들어가있는것은 못찾아
+정확한 단어 if 글쓰기 , 글쓰기 글쓰기, 많이 글쓰기
+이렇게 있다면 글쓰기를 검색해야 함
+-> 코딩하기, 코딩배우기, 코딩연습 여기서 코딩만 치면 검색안되
+mongoDB는 띄어쓰기 기준으로 단어를 text index에 저장하기 때문이다!
+
+!!영어가 아닌 언어는 이 text search 기능을 이 심각한 문제때문에 쓸수가 없다....
+
+---------------------- 해결책 ------------------------------
+
+해결책 1. 검색할 문서의 양을 제한을 둡니다.
+   - DB에다가 검색요청을 날릴 때 특정 날짜에서만 검색하라고 요구할 수도 있고
+   - skip(), limit() 이런 함수를 이용하시면 pagination 기능을 개발할 수 있습니다.
+   - 그니까 맨 처음 검색할 땐 맨앞에 20개만 찾아줘~
+   - 그 다음엔 다음 20개를 찾아줘~ 
+   - 이렇게 요구할 수 있다는 겁니다. 대부분의 게시판들은 이런 방법을 이용합니다.
+
+해결책 2. text index 그대로 쓰는데 띄어쓰기 단위로 저장하지말고 따로해~ 라고 하는것
+   - 알고리즘 만들어야하고 atlas에서는 사용불가능
+   - mongoDB를 하드에 직접 설치하고 해야함
+   - nGram 이런 알고리즘을 쓰면 된다고 하는데 이걸 언제하고 있습니까 패스합시다 
+
+해결책 3. Search index를 사용합니다.
+   - MongoDB Atlas에서만 제공하는 기능인데 
+   - 클러스터 들어가보시면 아마 Search 어쩌구라는 메뉴가 있을겁니다. 그거 누르시면 됩니다. 
+   - Seacrh index를 만들면 한국어 친화로 만들수 있음
+   - index Name 잘 만들어, 그담 원하는 컬랙션 선택하고
+   - 그담 index Analyzer 선택잘 해야대 lucene.korean 으로 둘다 선택하렴
+   - 그담 Add Field 에서 필드네임에 지정할수 있는건데 안해도 될꺼야
+
+   -> Search index에서는 server에서 find 말고 다른함수를 쓴다 aggregate()
+      - 검색조건을 여러개 설정할 수가 있다. 길수가 있으니 변수로 만들자
+      - 이거는 잘 검색해서 씁시다 ㅠㅠㅠ
+
+** Search index는 mongoDB atlas에서만 제공하고 있다~!
+
+   -> 추가정보 여러가지 검색용 연산자(필요할때마다 찾아써 그냥...)
+   let 검색조건 = [
+    {
+      $search: {
+        index: '님이만든인덱스명',
+        text: {
+          query: 요청.query.value,
+          path: '제목'  // 제목날짜 둘다 찾고 싶으면 ['제목', '날짜']
+        }
+      }
+    },
+   { $sort : { _id : 1 } },
+   { $limit : 10 },
+   { $project : { 제목 : 1, _id : 0 } }
+   ]
+
+   $sort를 쓰면 결과를 정렬해서 가져옵니다. _id를 오름차순으로 정렬해주세요~ 라고 썼습니다.
+
+   $limit을 쓰면 결과를 제한해줍니다. 맨위의 10개만 가져오라고 시켰습니다. 
+
+   $project를 쓰면 찾아온 결과 중에 원하는 항목만 보여줍니다. 0은 안보여주고 1은 보여주라는 뜻입니다. 위의 코드는 _id는 빼고 제목만 가져오겠군요. 
+
+   이 외에도 백만개의 $연산자가 있다고 합니다.
