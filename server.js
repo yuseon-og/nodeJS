@@ -27,6 +27,8 @@ const MongoClient = require("mongodb").MongoClient;
 let db;
 let id = 7;
 
+// =====================DB 연결
+
 MongoClient.connect(process.env.DB_URL, (error, client) => {
   if (error) {
     return console.log("error!!");
@@ -40,19 +42,26 @@ MongoClient.connect(process.env.DB_URL, (error, client) => {
   //   }
   // );
 
+  // =====================서버 오픈
   app.listen(process.env.PORT, () => {
     console.log("listening on 8080 okok");
   });
 });
 
-app.post("/add", (req, res) => {
+// ===================== 글쓰기
+app.post("/add", logInConfirm, (req, res) => {
   res.redirect("/write");
 
   db.collection("counter").findOne({ name: "게시물갯수" }, (error, result) => {
     // console.log(result.totalPost);
     let idCounter = result.totalPost;
     db.collection("post").insertOne(
-      { _id: idCounter, 제목: req.body.title, 날짜: req.body.date },
+      {
+        _id: idCounter,
+        작성자: req.user._id,
+        제목: req.body.title,
+        날짜: req.body.date,
+      },
       (error, result) => {
         // console.log("저장완료");
         db.collection("counter").updateOne(
@@ -70,16 +79,26 @@ app.post("/add", (req, res) => {
   });
 });
 
-app.delete("/delete", (req, res) => {
+// ===================== 삭제
+app.delete("/delete", logInConfirm, (req, res) => {
   console.log("delete request");
-  console.log(req.body);
   req.body._id = parseInt(req.body._id);
-  db.collection("post").deleteOne(req.body, (error, reuslt) => {
-    console.log("삭제완료");
-    res.status(200).send({ message: "성공했습니다." });
-  });
+  console.log(req.body);
+  console.log(req.user._id);
+  db.collection("post").deleteOne(
+    { _id: req.body._id, 작성자: req.user._id },
+    (error, result) => {
+      if (result.deletedCount === 0) {
+        console.log("삭제 안되써요");
+        return res.status(500).send({ message: "실패했습니다." });
+      }
+      console.log("삭제 되써요");
+      res.status(200).send({ message: "성공했습니다." });
+    }
+  );
 });
 
+// ===================== 리스트 보여주기
 app.get("/list", (req, res) => {
   db.collection("post")
     .find()
@@ -162,15 +181,20 @@ app.get("/search", (req, res) => {
 //     });
 // });
 
+// ===================== 홈페이지
+
 app.get("/", (request, response) => {
   // response.sendFile(__dirname + "/index.html"); 쌩 html보내기
   response.render("index.ejs", {});
 });
 
+// ===================== 글쓰기 페이지 이동
 app.get("/write", (request, response) => {
   // response.sendFile(__dirname + "/write.html");쌩 html보내기
   response.render("write.ejs", {});
 });
+
+// ===================== 상세페이지
 
 app.get("/detail/:id", (req, res) => {
   db.collection("post").findOne(
@@ -188,6 +212,8 @@ app.get("/detail/:id", (req, res) => {
     }
   );
 });
+
+// =====================글 수정
 
 app.get("/edit/:id", (req, res) => {
   db.collection("post").findOne(
@@ -227,8 +253,54 @@ app.put("/edit", (req, res) => {
   );
 });
 
+// ===================== 회원가입 기능
+
+// ===================== 회원가입 페이지 이동
+
+app.get("/register", (req, res) => {
+  res.render("register.ejs", {});
+});
+
+app.post("/register", idCheck, (req, res) => {
+  res.redirect("/login");
+
+  db.collection("login").insertOne(
+    {
+      id: req.body.userId,
+      pw: req.body.password,
+      name: req.body.userName,
+      phone: req.body.phoneNumber,
+      address: req.body.address,
+    },
+    (error, result) => {
+      if (error) {
+        return console.log("에러염");
+      }
+      console.log("가입되써염");
+    }
+  );
+});
+
+// 미들웨어로 아이디 중복체크 해보자
+function idCheck(req, res, next) {
+  db.collection("login").findOne({ id: req.body.userId }, (error, result) => {
+    if (result) {
+      return res.send(
+        '<script type="text/javascript">alert("오류발생");</script>'
+      );
+    }
+    next();
+  });
+}
+
+// ===================== 로그인 기능
+
 app.get("/login", (req, res) => {
-  res.render("login.ejs");
+  if (req.user) {
+    res.redirect("/mypage");
+  } else {
+    res.render("login.ejs");
+  }
 });
 
 app.get("/fail", (req, res) => {
@@ -304,4 +376,52 @@ passport.deserializeUser((userId, done) => {
       return done(null, result);
     }
   });
+});
+
+//================================= ROUTER폴더로 API 관리하기 예제==============================
+
+// 미들웨어 등록
+// 어떤 경로에 이 미들웨어 써라
+app.use("/", require("./routers/shop.js"));
+
+app.use("/board/sub", require("./routers/board.js"));
+
+//===================== 이미지 업로드 예제
+
+app.get("/upload", (req, res) => {
+  res.render("upload.ejs", {});
+});
+
+const multer = require("multer");
+const storage = multer.diskStorage({
+  destination: (req, file, callback) => {
+    callback(null, "./public/image");
+  },
+  filename: (req, file, callback) => {
+    callback(null, file.originalname);
+  },
+});
+
+const path = require("path");
+
+let upload = multer({
+  storage: storage,
+  fileFilter: function (req, file, callback) {
+    var ext = path.extname(file.originalname);
+    if (ext !== ".png" && ext !== ".jpg" && ext !== ".jpeg") {
+      return callback(new Error("PNG, JPG만 업로드하세요"));
+    }
+    callback(null, true);
+  },
+  limits: {
+    fileSize: 1024 * 1024,
+  },
+});
+
+app.post("/upload", upload.single("image"), (req, res) => {
+  res.redirect("/upload");
+});
+
+app.get("/image/:imgName", (req, res) => {
+  res.sendFile(__dirname + "/public/image/" + req.params.imgName);
 });
