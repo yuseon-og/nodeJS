@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chating server</title>
+    <link rel="stylesheet" href="../public/css/style.css">
+</head>
+<body>
+    <!-- <h1> hello </h1> -->
+
+    <div class="wrapper">
+        <div class="user-container">
+            <label for="nickname">대화명</label>
+            <input type="text" id="nickname">
+        </div>
+        <div class="display-container">
+            <ul class="chatting-list">
+              
+            </ul>
+            <!-- 여기에 채팅을 할때마다 ul을 생성해서 넣어줄거임 -->
+        </div>
+        
+        
+        <div class="input-container">
+            <span>
+            <input type="text" class="chatting-input">
+            <button class="send-button">전송</button>
+            
+        </span>
+        </div>
+        <button class="btn btn-secondary mx-auto d-block w-100 mt-1" id="chat1">채팅방 1 입장</button>
+            <button class="btn btn-secondary mx-auto d-block w-100 mt-1" id="chat11">채팅방 1 나가기</button>
+            <button class="btn btn-secondary mx-auto d-block w-100 mt-1" id="chat2">채팅방 2 입장</button>
+            <button class="btn btn-secondary mx-auto d-block w-100 mt-1" id="chat22">채팅방 2 나가기</button>
+    </div>
+
+
+
+
+
+
+
+
+
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.2/socket.io.js" integrity="sha512-iZIBSs+gDyTH0ZhUem9eQ1t4DcEn2B9lHxfRMeGQhyNdSUz+rb+5A3ummX6DQTOIs1XK0gOteOg/LPtSo9VJ+w==" crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
+    <script src = "/socket.io/socket.io.js"></script>
+    <script src = "../public/js/chat.js"></script>
+   
+</body>
+</html>

@@ -8,6 +8,14 @@ require("dotenv").config();
 const methodOverride = require("method-override");
 app.use(methodOverride("_method"));
 
+// Web Socket.io 사용 위한 라이브러리
+
+const http = require("http");
+const server = http.createServer(app);
+const socketIO = require("socket.io");
+const io = socketIO(server);
+const moment = require("moment");
+
 // session 인증 라이브러리
 
 const passport = require("passport");
@@ -43,7 +51,8 @@ MongoClient.connect(process.env.DB_URL, (error, client) => {
   // );
 
   // =====================서버 오픈
-  app.listen(process.env.PORT, () => {
+  // socket.io 때문에 app. 에서 server로 변경
+  server.listen(process.env.PORT, () => {
     console.log("listening on 8080 okok");
   });
 });
@@ -424,4 +433,67 @@ app.post("/upload", upload.single("image"), (req, res) => {
 
 app.get("/image/:imgName", (req, res) => {
   res.sendFile(__dirname + "/public/image/" + req.params.imgName);
+});
+
+// ========================= socket.io chating server ===============
+
+app.use("/public", express.static("public"));
+
+moment.locale("ko");
+
+// 기본 단체 채팅방 만들기 "namespace 없음"
+// io.on("connection", (socket) => {
+//   console.log("연결????");
+//   socket.on("chatting", (msgFromClient) => {
+//     const { name, msg } = msgFromClient;
+//     // console.log(msgFromClient);
+//     const time = moment().format("LT");
+
+//     io.emit("chatting", { name, msg, time });
+//   });
+// });
+
+const chat1 = io.of("/chat1");
+
+chat1.on("connection", (socket) => {
+  console.log("chat 1 연결");
+
+  let roomNumber = "";
+
+  socket.on("join", (chatNumber) => {
+    socket.join(chatNumber);
+    roomNumber = chatNumber;
+    console.log(`${chatNumber} 연결`);
+  });
+
+  socket.on("leave", (chatNumber) => {
+    socket.leave(chatNumber);
+    roomNumber = chatNumber;
+    console.log(`${chatNumber} 해제`);
+  });
+
+  socket.on("chatting", (msgFromClient) => {
+    const { name, msg } = msgFromClient;
+    // console.log(msgFromClient);
+    const time = moment().format("LT");
+
+    chat1.to(roomNumber).emit("chatting", { name, msg, time });
+  });
+});
+
+// const chat2 = io.of("/chat2");
+
+// chat2.on("connection", (socket) => {
+//   console.log("chat 2 연결????");
+//   socket.on("chatting", (msgFromClient) => {
+//     const { name, msg } = msgFromClient;
+//     // console.log(msgFromClient);
+//     const time = moment().format("LT");
+
+//     chat2.emit("chatting", { name, msg, time });
+//   });
+// });
+
+app.get("/chat", (req, res) => {
+  res.render("chat.ejs", {});
 });

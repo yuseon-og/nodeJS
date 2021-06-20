@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chating server</title>
+    <link rel="stylesheet" href="../public/css/style.css">
+</head>
+<body>
+    <!-- <h1> hello </h1> -->
+
+    <div class="wrapper">
+        <div class="user-container">
+            <label for="nickname">대화명</label>
+            <input type="text" id="nickname">
+        </div>
+        <div class="display-container">
+            <ul class="chatting-list">
+                <li class="sent">
+                    <span class="profile">
+                        <span class="user">이름</span>
+                        <img class="image" src="https://placeimg.com/50/50/any" alt="any">
+                    </span>
+                    <span class="message">메세지 내용</span>
+                    <span class="time">오후 14:14</span>
+                </li>
+                <li class="received">
+                    <span class="profile">
+                        <span class="user">이름</span>
+                        <img class="image" src="https://placeimg.com/50/50/any" alt="any">
+                    </span>
+                    <span class="message">메세지 내용</span>
+                    <span class="time">오후 14:14</span>
+                </li>
+            </ul>
+            <!-- 여기에 채팅을 할때마다 ul을 생성해서 넣어줄거임 -->
+        </div>
+        <div class="input-container">
+            <span>
+            <input type="text" class="chatting-input">
+            <button class="send-button">전송</button>
+        </span>
+        </div>
+    </div>
+
+
+
+
+
+
+</body>
+</html>

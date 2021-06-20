@@ -1,3 +1,9 @@
+-------------nodemon server.js ---------------
+package.json에서 "scripts": 부분에
+"start" : "nodemon server.js" 해놓으면
+npm start로 실행 가능
+
+
 --------------------리액트 쓰면 안해도 될것들-------------
 1. ejs 파일은 다 싸그리 무시
 2. 서버는 데이터 주고받는 api역할
@@ -1041,3 +1047,245 @@ API로 완전히 만들려면
 2. 저장이 성공하면 아마존에서 이미지 URL을 퉤 뱉어줍니다. amazon.com/image/music.jpg 대충 이렇다고 칩시다. 
 3, 그 amazon.com/image/music.jpg 이라는 URL을 프로필 이미지만 따로 모아놓은 MongoDB document에 { id : admin, 프로필이미지 : amazon.com/image/music.jpg } 이런 정보를 저장합니다. 이미지 URL와 이미지가 누구 것인지의 정보를 저장하는 셈이죠? 그럼 저장과정 끝!
 4. 이미지 보여주기는 더 쉽습니다. 그 이미지가 필요한 페이지에선 amazon.com/image/music.jpg 이라는 URL을 DB에서 불러와서 <img> 태그 안에 넣기만 하시면 됩니다. 
+
+
+=============================socket.io 채팅 with vanila JS =====================
+
+1. npm install socket.io
+
+2. socket.io + node.js 기본라이브러리 http로 서버 열기
+
+   1) 셋팅
+      const http = require("http");
+      const server = http.createServer(app);
+      const socketIO = require("socket.io");
+      const io = socketIO(server);
+
+   2) http로 서버 띄우기
+      app.listen.... 을
+      server.listen 으로 변경
+
+   -> http라는 nodejs 기본라이브러리 + socket.io로 서버 연걸로
+   소켓을 뚫을 수 있는 서버로 업그레이드 한것
+   동작방식은 원래 서버와 차이 없음
+
+   마지막에 만든 const io -> 이놈으로 메세지 등 받아와서 제어
+
+   io.on 함수에 connection 메서도 사용
+   커넥션 이루어지면 그 연결에 대한 정보를 socket에 담고
+   이 소켓을 화살표함수의 인자에 넣고
+   함수내에서 이 socket의 정보에 접근해서 제어를 한다.
+
+3. chat.ejs 파일 만들기
+   1) socketio 라이브러리 가져오기(자바스크립트)
+      1-1) cdn으로 가져오기
+         <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script> 
+         -> 이때 socket.io 버전문제 있으니 package.json에 기록된 버전 확인해서 넣을것
+      1-2) 절대경로로 가져오기
+         <script src = "/socket.io/socket.io.js"></script>
+         -> 콘솔창 띄워서 가져오는거 문제있는지 확인할 것
+   
+   2) chat.js 파일 만들고 인서트 해주기(따로 관리합시다.)
+      ** ejs에서에서 js파일 넣어서 쓰려면 경로 지정해야하는데
+         server에서 경로 맨 위에꺼 넣어줘야해 
+      경로 -> <script src = "../public/js/chat.js"></script>
+      넣어줘야할것 -> app.use("/public", express.static("public"));
+      -> 정적 모듈을 사용하여 JS 파일에 URL을 제공해야 함
+
+ 4. chat.js (ejs 파일 아님@! ejs에서 넣은 js파일임)
+   1. socket.io 불러오기
+      -"use strict"로 자바스크립트 오류 줄이기
+      - const socket = io(); 일케하면 연결됨.... log 찍어바....
+
+--- 연결 구현 완료 -- 주고받고만 구현하면 됨
+   보내기 : emit
+   받기 : on
+   서버가 보내고 받는것 io.emit / on
+   프론트가 보내고 받는것 socket.emit/on
+
+   프론트에서 보낸걸 서버에서 받는게 socket이니까
+   이 보낸걸 받아서 뭘 하려면 일단 socket.on 이 있어야 하고
+   그 안에 메세지 받아서 돌려주려면
+   서버가 돌려주는거니까 io.emit 이런식이다.
+
+1. 프론트에서 보내기 / 받기
+   socket.emit("채팅이름","보낼메세지");
+   socket.on("채팅이름",실행할 함수)
+2. 서버에서 보내기 / 받기
+   io.emit("채팅이름","보낼메세지");
+   io.on("채팅이름",실행할 함수)
+
+------------ 화면 꾸미고 실제 만들어보자 ----------
+대화명
+채팅내용 출력 : ul을 만들꺼다 채팅을 할때마다 ul 을 생성
+입력창 / 버튼
+
+각가 dom 제어를 해야하니까 chat.js 에서 하자
+
+ 1. dom 선택하기
+   const nickname = document.querySelector("#nickname");
+   const chatlist = document.querySelector(".chatting-list");
+   const chatInput = document.querySelector(".chatting-input");
+   const sendButton = document.querySelector(".send-button");
+
+2. 클릭이벤틀 메세지와 닉네임 보내기
+   // 버튼눌러서 클릭 이벤트 발생하면
+   // param에 nickname.value와 chatInput.value 넣고
+   // socket.emit에서 보내는 파라메터에 객체형태로 넣어주기
+
+   sendButton.addEventListener("click", () => {
+      const param = {
+         name: nickname.value,
+          msg: chatInput.value,
+      };
+
+        socket.emit("chatting", param);
+      });
+
+3. 서버로 들어간 메세지를 다시 돌려주는데 받아서 화면에 그리기
+   // 받아서 출력해줘야 하니까
+   // socket.on에서 메시지 받은거를
+   // ul 안에 li를 생성해서 넣어주면 되자나?
+   // li 생성 -> li.innerText에 msgFromServer 데이터 넣고
+   // chatlist.appendChid에 생성한 li 넣어주기
+
+      socket.on("chatting", (msgFromServer) => {
+         console.log(msgFromServer);
+         const li = document.createElement("li");
+         li.innerText = `${msgFromServer.name}님이 보냄 : ${msgFromServer.msg}`;
+         chatlist.appendChild(li);
+         });
+
+
+
+4. css로 꾸미기
+   여기서 보낸메세지와 받은메세지를 역으로 보여줘야함
+   보낸메세지sent와 받은메세지 received에 클래스 다르게줘
+   그 클래스를 자바스크립트로 보낸/받은 메세지에 넣기
+
+
+5. 송수신 JS에다가 CSS적용된 html 그려줘야해
+   -> JS에서 li를 생성할때 안에 class와 li 밑에 태그 한번에 넣어라
+      이런 기능을 하는 함수를 생성해
+      그 함수안에 메세지에 들어가는 정보들 다 넣고
+      그 정보들로 html을 생성하는 내부함수를 작성
+
+      기본셋팅
+      name,msg,time(함수 파라메타들) 을 모두 이 안에서 사용할꺼다라는 초기화
+      this.name = name 해줘
+
+      li의 class 생성 로직
+         - li를 먼저 만들고
+         - classList.add열고
+         - nickname.value와(전역변수임) 현재 this.name와 비교
+            -> 같다면 나니까 sent 클래스 추가
+            -> 다르다면 내가 아니니까 received 추가
+
+      li 이하 html 생성 로직
+         - 변수 하나 생성해서 그 안에 ``; 여기에다가 html 넣어
+         - 내부에 this.name, this.msg, this.time 들어가는곳에
+            ${}이걸로 감싸줘
+         - innerHTML에 넣어줘
+         - chatlist.appendChid에 넣어줘 
+         
+      메시지 오면 자동으로 스크롤 맨밑으로 하는 법
+         - chatlist.lastChild.scrollIntoView(false);
+         
+         끝
+
+   -> 이 작성된 함수를 chat.js의 메시지를 받는 기능에다가 실행
+      
+      1. 넘어온 데이터를 구조분해해서 쓰기 편하게 해주기
+
+      2. 위에 만든 함수를 새로 new 만들어주기
+         이때 만들때 당연히 파라메터를 구조분해한놈들로 집어넣기
+
+      3. 새로 만든 함수변수.위에만든 내부함수 이름
+
+      끝
+
+
+--------------------------time 부분 구현하기 ---------------
+
+1. npm install moment
+
+2. moment로 time 변수 생성하고 값넣어서
+
+3. io.emit으로 프론트에 보내주면 끝
+
+moment 사용법은 검색해보면 됨
+
+
+------------------------- 채팅방 여러개 만들기 -----------------
+ -> socket.io의 namespace 이용하면 됨
+
+ 1. 서버단 설정
+   - io.on~으로 시작했던것으로 io.of('/채팅방이름').on 으로바꿔
+   어떻게?
+
+   - 변수하나 선언 = io.of('/채팅방이름')
+   - 변수.on~~~~~
+   이렇게  ** 내부에 있는 io.emit도 이름 바꿔야해
+
+
+ 2. 클라이언트 단 설정
+    - const socket=io(); 이부분 만 변경
+      -> const socket=io('/채팅방이름')
+
+   끝
+ 
+ 3. 버튼으로 각각 채팅방 접속 구현
+   -> 버튼 두개이상 만들고...
+   -> 그 버튼 누를때(click) 이벤트 리스너로 함수 실행해버려
+   -> 어떤 함수 실행?
+      -> 지금까지 만들었던 채팅관련 내용 다 넣어버려
+
+-> 여기까지 하면 chat1,2를 누르면 html 생성하는 코드까지
+모두 실행해버려서 버그가 생겨있다....
+즉 입장버튼 여러번 눌리면 메세지도 여러번X여러번 날라간다
+
+그리고!
+
+namespace로 채팅방 만들면 클라이언트에서 자바스크립트로 들어갈수 있어
+그래서 1:1, 비밀번호 등 privite 한 방 만들려면
+Room 이라는 개념으로 가자
+
+----------- room 으로 채팅방 구분하는법 -----------
+
+1. ejs 페이지에서 채팅방 선택할수 있는거 2개 버튼 만들어주기
+
+2. 서버에서 룸 만들고 거기에 보내는법
+   socket.join('룸이름')
+
+3. js 코드에서 버튼 누르면
+   socket.emit //보내주기
+   ("요청이름","요청데이터")
+
+4. 서버에서는 위의 룸 조인 요청 들어오면
+   수신하는법 socket.on으로 열고
+   ("요청이름","함수(요청데이터)")
+   한다으며 함수내에서 요청데이터를 가지고 join 시키면 됨
+
+5. join은 시켰는데 그럼 메세지 다시 emit해서 보내줄때
+   딱 그 room에만 보내는 법?
+   -> chat.emit 이렇게 하면 같은 namespace에 있으면 다보내줌
+   -> chat.to('룸이름').emit 하면 '룸이름'에만 보냄
+
+6. room2로 구분해서 기능개발
+   -> js에서는 이미 chat2라는 데이터가 날라오니까join 부분은 ok
+
+   ** 변수 scope 조심해야해
+      JS에서는 변수는 딱 그 함수에서만 살아있어
+      그래서 join 요청해서 응답하는 콜백함수 내에서만
+      room1/2라는 data가 살아있음
+
+      -> 해결법 : 외부에 변수 선언하고, 내부에서 그 변수에 데이터 담기, 그다음 chatting 요청에서 쓰기
+
+--------- 일케하면 하나씩 들어갈때는 ㅇㅋ 인데
+         양쪽에 join을 한순간부터는.... 걍 다보여
+         중복 join이 된다는 소리
+
+         -> 나가기 버튼을 만들어서 socket.leave 하면 어때?
+         -> 나가는 쪽은 나가지는데 반대쪽은 그대로 보이네...
+         메세지 보낼때가 문제인듯
+         나중에 해결해보자...
